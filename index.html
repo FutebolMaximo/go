@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Redirecionando…</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: #0b0b0b;
+      color: #e8e8e8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      text-align: center;
+      padding: 24px;
+    }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: girar 0.8s linear infinite;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
+    p { font-size: 15px; opacity: 0.85; margin: 0; }
+    .sub { font-size: 13px; opacity: 0.5; }
+    a { color: #7db9ff; }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <p>Redirecionando para o 9Fantasy…</p>
+  <p class="sub">Se não for redirecionado, <a id="manual" href="https://9fantasy.app/">clique aqui</a>.</p>
+
+  <noscript>
+    <p class="sub">Ative o JavaScript ou <a href="https://9fantasy.app/">clique aqui para continuar</a>.</p>
+  </noscript>
+
+  <script>
+  (function () {
+    // ==================== CONFIGURAÇÃO ====================
+    // 1) Cole ENTRE AS ASPAS a sua URL /exec do Apps Script.
+    //    (substitua todo o texto COLE_AQUI_A_SUA_URL_EXEC, deixando as aspas)
+    var EXEC_URL = "https://script.google.com/macros/s/AKfycbxI6J9AeepcqnLnfWJIubbwv88JqiZE1B65i3mA8WixFAqzDEKOtpa1XUxBTCcTMprf/exec";
+
+    // 2) Destino final para onde o espectador é enviado (o website).
+    var DESTINO = "https://9fantasy.app/";
+
+    // 3) Manter os UTMs colados no destino?
+    //    O site não os lê hoje, mas é inofensivo e deixa a porta aberta pro futuro.
+    //    Troque para false se quiser a URL final "limpa".
+    var MANTER_UTMS_NO_DESTINO = true;
+
+    // 4) Tempo máximo (ms) que a página espera pela detecção de país antes
+    //    de seguir mesmo assim. Deixe menor (ex: 500) para redirecionar mais rápido.
+    var TIMEOUT_PAIS = 1000;
+    // =====================================================
+
+    function detectarDispositivo() {
+      var ua = navigator.userAgent || "";
+      if (/iPad|Tablet|PlayBook/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) return "tablet";
+      if (/Mobi|Android|iPhone|iPod/i.test(ua)) return "mobile";
+      return "desktop";
+    }
+
+    function getVisitorId() {
+      var novo = "v-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      try {
+        var id = localStorage.getItem("vid_9f");
+        if (!id) {
+          id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : novo;
+          localStorage.setItem("vid_9f", id);
+        }
+        return id;
+      } catch (e) { return novo; }
+    }
+
+    function obterPais(timeoutMs) {
+      return new Promise(function (resolve) {
+        var pronto = false;
+        function terminar(v) { if (!pronto) { pronto = true; resolve(v); } }
+        var t = setTimeout(function () { terminar(""); }, timeoutMs);
+        fetch("https://ipwho.is/")
+          .then(function (r) { return r.json(); })
+          .then(function (j) { clearTimeout(t); terminar(j && j.country ? j.country : ""); })
+          .catch(function () { clearTimeout(t); terminar(""); });
+      });
+    }
+
+    function enviar(dados) {
+      var json = JSON.stringify(dados);
+      var enviado = false;
+      try {
+        if (navigator.sendBeacon) {
+          // text/plain evita "preflight" de CORS e funciona com o Apps Script
+          enviado = navigator.sendBeacon(EXEC_URL, new Blob([json], { type: "text/plain" }));
+        }
+      } catch (e) { enviado = false; }
+      if (!enviado) {
+        try {
+          fetch(EXEC_URL, {
+            method: "POST",
+            body: json,
+            headers: { "Content-Type": "text/plain" },
+            mode: "no-cors",
+            keepalive: true
+          });
+        } catch (e) {}
+      }
+    }
+
+    function redirecionar() {
+      var query = window.location.search; // já vem com "?..."
+      var url = DESTINO;
+      if (MANTER_UTMS_NO_DESTINO && query && query.length > 1) { url += query; }
+      window.location.replace(url); // replace = não deixa a ponte no histórico
+    }
+
+    function iniciar() {
+      var p = new URLSearchParams(window.location.search);
+
+      // aponta o link manual pro destino certo (fallback se o JS travar)
+      var manual = document.getElementById("manual");
+      if (manual) manual.href = DESTINO + (p.toString() ? "?" + p.toString() : "");
+
+      var dados = {
+        source:       p.get("source")       || "",
+        utm_source:   p.get("utm_source")   || "",
+        utm_medium:   p.get("utm_medium")   || "",
+        utm_campaign: p.get("utm_campaign") || "",
+        device:       detectarDispositivo(),
+        country:      "",
+        visitor_id:   getVisitorId()
+      };
+
+      obterPais(TIMEOUT_PAIS).then(function (pais) {
+        dados.country = pais;
+        enviar(dados);
+        redirecionar();
+      });
+    }
+
+    iniciar();
+  })();
+  </script>
+</body>
+</html>
