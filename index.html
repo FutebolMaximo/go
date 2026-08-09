@@ -3,151 +3,572 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex">
-  <title>Redirecionando…</title>
+  <title>Gerador de Links UTM</title>
   <style>
-    :root { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; }
-    body {
-      background: #0b0b0b;
-      color: #e8e8e8;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0f1117;
+      --surface: #1a1d27;
+      --border:  #2a2d3a;
+      --accent:  #6c63ff;
+      --accent2: #a78bfa;
+      --text:    #e8e8f0;
+      --muted:   #7b7d8e;
+      --success: #22c55e;
+      --error:   #ef4444;
+      --radius:  10px;
+      --font:    'Inter', system-ui, sans-serif;
+    }
+
+    html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 80px;
+    }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 40px; }
+
+    .header-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 4px 14px;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+    }
+
+    .header h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p { margin-top: 10px; font-size: 14px; color: var(--muted); }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    /* ── Field wrapper ── */
+    .fields { display: flex; flex-direction: column; gap: 24px; }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field-label .param {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: var(--accent2);
+      background: rgba(108,99,255,0.1);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* ── Toggle button group ── */
+    .toggle-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .toggle-btn:hover:not(.active) {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .toggle-btn.active {
+      background: rgba(108,99,255,0.12);
+      border-color: var(--accent);
+      color: var(--accent2);
+      font-weight: 700;
+    }
+
+    /* ── Text input ── */
+    .field input {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font);
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); opacity: 0.6; }
+
+    /* Video ID feedback */
+    .video-id-preview {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .video-id-preview.visible { display: flex; }
+
+    .video-id-badge {
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: var(--success);
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 6px;
+    }
+
+    .video-id-label { color: var(--muted); font-size: 11px; }
+
+    .video-id-error { display: none; font-size: 11px; color: var(--error); }
+    .video-id-error.visible { display: block; }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+    /* ── Fixed rows (Base + Fonte) ── */
+    .fixed-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+
+    .fixed-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+
+    .fixed-row-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      white-space: nowrap;
+    }
+
+    .fixed-row-value {
+      font-size: 13px;
+      color: var(--muted);
+      font-family: 'Courier New', monospace;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fixed-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.35);
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* ── Output ── */
+    .output-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .output-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      color: var(--muted);
+      word-break: break-all;
+      line-height: 1.8;
+      min-height: 60px;
+      transition: border-color 0.2s;
+    }
+
+    .output-box.has-params { border-color: rgba(108,99,255,0.3); }
+    .output-box .url-base      { color: var(--muted); }
+    .output-box .url-param-key { color: var(--accent2); }
+    .output-box .url-param-val { color: var(--success); }
+    .output-box .url-sep       { color: var(--accent); }
+
+    /* ── Buttons ── */
+    .btn-copy {
+      margin-top: 14px;
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: var(--font);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
-      gap: 18px;
-      text-align: center;
-      padding: 24px;
+      gap: 8px;
     }
-    .spinner {
-      width: 42px; height: 42px;
-      border: 3px solid rgba(255,255,255,0.15);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: girar 0.8s linear infinite;
+
+    .btn-copy:hover:not(:disabled) { background: #5b52e8; }
+    .btn-copy:active:not(:disabled) { transform: scale(0.98); }
+    .btn-copy.copied { background: var(--success); }
+    .btn-copy:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-clear {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: var(--font);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
     }
-    @keyframes girar { to { transform: rotate(360deg); } }
-    p { font-size: 15px; opacity: 0.85; margin: 0; }
-    .sub { font-size: 13px; opacity: 0.5; }
-    a { color: #7db9ff; }
+
+    .btn-clear:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--success);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 30px;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <p>Redirecionando para o 9Fantasy…</p>
-  <p class="sub">Se não for redirecionado, <a id="manual" href="https://9fantasy.app/">clique aqui</a>.</p>
 
-  <noscript>
-    <p class="sub">Ative o JavaScript ou <a href="https://9fantasy.app/">clique aqui para continuar</a>.</p>
-  </noscript>
+<div class="page">
 
-  <script>
-  (function () {
-    // ==================== CONFIGURAÇÃO ====================
-    // 1) Cole ENTRE AS ASPAS a sua URL /exec do Apps Script.
-    //    (substitua todo o texto COLE_AQUI_A_SUA_URL_EXEC, deixando as aspas)
-    var EXEC_URL = "https://script.google.com/macros/s/AKfycbxI6J9AeepcqnLnfWJIubbwv88JqiZE1B65i3mA8WixFAqzDEKOtpa1XUxBTCcTMprf/exec";
+  <div class="header">
+    <div class="header-badge">Futebol Máximo</div>
+    <h1>Gerador de <span>Links UTM</span></h1>
+    <p>Selecione o formato, destino e cole o link do vídeo</p>
+  </div>
 
-    // 2) Destino final para onde o espectador é enviado (o website).
-    var DESTINO = "https://9fantasy.app/";
+  <div class="card">
 
-    // 3) Manter os UTMs colados no destino?
-    //    O site não os lê hoje, mas é inofensivo e deixa a porta aberta pro futuro.
-    //    Troque para false se quiser a URL final "limpa".
-    var MANTER_UTMS_NO_DESTINO = true;
+    <!-- Fixed info rows (hidden, logic kept in JS) -->
+    <div class="fixed-rows" style="display:none;">
+      <div class="fixed-row">
+        <span class="fixed-row-label">Base</span>
+        <span class="fixed-row-value" id="baseDisplay">https://9fantasy.app/app</span>
+      </div>
+      <div class="fixed-row">
+        <span class="fixed-row-label">Fonte</span>
+        <span class="fixed-row-value">utm_medium=futebolmaximo</span>
+        <span class="fixed-badge">Fixo</span>
+      </div>
+    </div>
 
-    // 4) Tempo máximo (ms) que a página espera pela detecção de país antes
-    //    de seguir mesmo assim. Deixe menor (ex: 500) para redirecionar mais rápido.
-    var TIMEOUT_PAIS = 1000;
-    // =====================================================
+    <!-- Fields -->
+    <div class="fields">
 
-    function detectarDispositivo() {
-      var ua = navigator.userAgent || "";
-      if (/iPad|Tablet|PlayBook/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) return "tablet";
-      if (/Mobi|Android|iPhone|iPod/i.test(ua)) return "mobile";
-      return "desktop";
+      <!-- 1. FORMATO (utm_campaign) -->
+      <div class="field">
+        <div class="field-label">Formato <span class="param">utm_campaign</span></div>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="btn-longform" onclick="setFormato('longform')">📹 Long Form</button>
+          <button class="toggle-btn" id="btn-shorts"   onclick="setFormato('shorts')">⚡ Shorts</button>
+        </div>
+      </div>
+
+      <!-- 2. DESTINO (altera link base) -->
+      <div class="field">
+        <div class="field-label">Destino</div>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="btn-app" onclick="setDestino('app')">📱 App</button>
+          <button class="toggle-btn" id="btn-web" onclick="setDestino('web')">🌐 Web</button>
+        </div>
+      </div>
+
+      <!-- 3. LINK DO VÍDEO (utm_source) -->
+      <div class="field">
+        <div class="field-label">Link do Vídeo <span class="param">utm_source</span></div>
+        <input
+          id="videoLinkInput"
+          type="text"
+          placeholder="Cole o link do vídeo (ex: https://youtu.be/O5XWejP8yLg)"
+          oninput="handleVideoLink(this.value)"
+        />
+        <div class="video-id-preview" id="videoIdPreview">
+          <span class="video-id-label">ID detectado:</span>
+          <span class="video-id-badge" id="videoIdBadge"></span>
+        </div>
+        <div class="video-id-error" id="videoIdError">
+          Link inválido — cole um link do YouTube válido
+        </div>
+      </div>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Output -->
+    <div class="output-label">Link gerado</div>
+    <div class="output-box" id="outputBox">
+      <span class="url-base">Preencha os campos acima para gerar o link</span>
+    </div>
+
+    <button class="btn-copy" id="btnCopy" onclick="copyLink()" disabled>
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Copiar link
+    </button>
+
+    <button class="btn-clear" onclick="clearAll()">Limpar campos</button>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✓ Link copiado!</div>
+
+<script>
+  const BASES = {
+    app: 'https://9fantasy.app/app',
+    web: 'https://9fantasy.app/'
+  };
+
+  let selectedFormato  = '';   // 'longform' | 'shorts'
+  let selectedDestino  = 'app'; // 'app' | 'web'
+  let currentVideoId   = '';
+
+  // ── Init ──
+  setDestino('app');
+
+  // ── Formato ──
+  function setFormato(val) {
+    selectedFormato = val;
+    document.getElementById('btn-longform').classList.toggle('active', val === 'longform');
+    document.getElementById('btn-shorts').classList.toggle('active',   val === 'shorts');
+    update();
+  }
+
+  // ── Destino ──
+  function setDestino(val) {
+    selectedDestino = val;
+    document.getElementById('btn-app').classList.toggle('active', val === 'app');
+    document.getElementById('btn-web').classList.toggle('active', val === 'web');
+    document.getElementById('baseDisplay').textContent = BASES[val];
+    update();
+  }
+
+  // ── Video ID extraction ──
+  function extractVideoId(url) {
+    url = url.trim();
+    if (!url) return null;
+    const patterns = [
+      /youtu\.be\/([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/watch\?.*v=([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
+      /^([A-Za-z0-9_-]{11})$/
+    ];
+    for (const p of patterns) {
+      const m = url.match(p);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  function handleVideoLink(val) {
+    const preview = document.getElementById('videoIdPreview');
+    const badge   = document.getElementById('videoIdBadge');
+    const error   = document.getElementById('videoIdError');
+
+    if (!val.trim()) {
+      currentVideoId = '';
+      preview.classList.remove('visible');
+      error.classList.remove('visible');
+      update();
+      return;
     }
 
-    function getVisitorId() {
-      var novo = "v-" + Date.now() + "-" + Math.random().toString(36).slice(2);
-      try {
-        var id = localStorage.getItem("vid_9f");
-        if (!id) {
-          id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : novo;
-          localStorage.setItem("vid_9f", id);
-        }
-        return id;
-      } catch (e) { return novo; }
+    const id = extractVideoId(val);
+    if (id) {
+      currentVideoId = id;
+      badge.textContent = id;
+      preview.classList.add('visible');
+      error.classList.remove('visible');
+    } else {
+      currentVideoId = '';
+      preview.classList.remove('visible');
+      error.classList.add('visible');
+    }
+    update();
+  }
+
+  // ── Build URL ──
+  function buildUrl() {
+    const base = BASES[selectedDestino];
+    const params = [
+      ['source',        'youtube'],
+      ['utm_source',    currentVideoId],
+      ['utm_medium',    'futebolmaximo'],
+    ];
+    if (selectedFormato) params.push(['utm_campaign', selectedFormato]);
+
+    const qs = params
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+
+    return qs ? `${base}?${qs}` : '';
+  }
+
+  // ── Render output ──
+  function renderOutput() {
+    const box = document.getElementById('outputBox');
+    const btn = document.getElementById('btnCopy');
+    const base = BASES[selectedDestino];
+
+    const hasContent = currentVideoId || selectedFormato;
+
+    if (!hasContent) {
+      box.className = 'output-box';
+      box.innerHTML = '<span class="url-base">Preencha os campos acima para gerar o link</span>';
+      btn.disabled = true;
+      return;
     }
 
-    function obterPais(timeoutMs) {
-      return new Promise(function (resolve) {
-        var pronto = false;
-        function terminar(v) { if (!pronto) { pronto = true; resolve(v); } }
-        var t = setTimeout(function () { terminar(""); }, timeoutMs);
-        fetch("https://ipwho.is/")
-          .then(function (r) { return r.json(); })
-          .then(function (j) { clearTimeout(t); terminar(j && j.country ? j.country : ""); })
-          .catch(function () { clearTimeout(t); terminar(""); });
-      });
+    const params = [
+      ['source',     'youtube'],
+      ['utm_source', currentVideoId],
+      ['utm_medium', 'futebolmaximo'],
+    ];
+    if (selectedFormato) params.push(['utm_campaign', selectedFormato]);
+
+    box.className = 'output-box has-params';
+    const parts = params
+      .filter(([, v]) => v)
+      .map(([k, v], i) => {
+        const sep = i === 0 ? '?' : '&';
+        return `<span class="url-sep">${sep}</span><span class="url-param-key">${k}</span><span class="url-sep">=</span><span class="url-param-val">${encodeURIComponent(v)}</span>`;
+      }).join('');
+
+    box.innerHTML = `<span class="url-base">${base}</span>${parts}`;
+    btn.disabled = false;
+  }
+
+  function update() {
+    renderOutput();
+    const btn = document.getElementById('btnCopy');
+    if (!btn.disabled) {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar link`;
     }
+  }
 
-    function enviar(dados) {
-      var json = JSON.stringify(dados);
-      var enviado = false;
-      try {
-        if (navigator.sendBeacon) {
-          // text/plain evita "preflight" de CORS e funciona com o Apps Script
-          enviado = navigator.sendBeacon(EXEC_URL, new Blob([json], { type: "text/plain" }));
-        }
-      } catch (e) { enviado = false; }
-      if (!enviado) {
-        try {
-          fetch(EXEC_URL, {
-            method: "POST",
-            body: json,
-            headers: { "Content-Type": "text/plain" },
-            mode: "no-cors",
-            keepalive: true
-          });
-        } catch (e) {}
-      }
-    }
+  // ── Copy ──
+  function copyLink() {
+    const url = buildUrl();
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('btnCopy');
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiado!`;
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    });
+  }
 
-    function redirecionar() {
-      var query = window.location.search; // já vem com "?..."
-      var url = DESTINO;
-      if (MANTER_UTMS_NO_DESTINO && query && query.length > 1) { url += query; }
-      window.location.replace(url); // replace = não deixa a ponte no histórico
-    }
+  // ── Clear ──
+  function clearAll() {
+    selectedFormato = '';
+    selectedDestino = 'app';
+    currentVideoId  = '';
+    document.getElementById('btn-longform').classList.remove('active');
+    document.getElementById('btn-shorts').classList.remove('active');
+    document.getElementById('btn-app').classList.add('active');
+    document.getElementById('btn-web').classList.remove('active');
+    document.getElementById('baseDisplay').textContent = BASES['app'];
+    document.getElementById('videoLinkInput').value = '';
+    document.getElementById('videoIdPreview').classList.remove('visible');
+    document.getElementById('videoIdError').classList.remove('visible');
+    update();
+  }
+</script>
 
-    function iniciar() {
-      var p = new URLSearchParams(window.location.search);
-
-      // aponta o link manual pro destino certo (fallback se o JS travar)
-      var manual = document.getElementById("manual");
-      if (manual) manual.href = DESTINO + (p.toString() ? "?" + p.toString() : "");
-
-      var dados = {
-        source:       p.get("source")       || "",
-        utm_source:   p.get("utm_source")   || "",
-        utm_medium:   p.get("utm_medium")   || "",
-        utm_campaign: p.get("utm_campaign") || "",
-        device:       detectarDispositivo(),
-        country:      "",
-        visitor_id:   getVisitorId()
-      };
-
-      obterPais(TIMEOUT_PAIS).then(function (pais) {
-        dados.country = pais;
-        enviar(dados);
-        redirecionar();
-      });
-    }
-
-    iniciar();
-  })();
-  </script>
 </body>
 </html>
