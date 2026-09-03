@@ -276,6 +276,26 @@
     .btn-copy.copied { background: var(--success); }
     .btn-copy:disabled { opacity: 0.35; cursor: not-allowed; }
 
+    .btn-copy.loading {
+      opacity: 0.7;
+      pointer-events: none;
+      cursor: wait;
+    }
+
+    .btn-copy .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .btn-clear {
       margin-top: 10px;
       width: 100%;
@@ -404,14 +424,21 @@
 <div class="toast" id="toast">✓ Link copiado!</div>
 
 <script>
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUbXwgSErNeY-M2ZX6Ktk3AqraLVt4E4rdUlICtKq-iw0PSQAWAtP-AQzIrQ48B_dL/exec';
+  const TRACKER_BASE_URL = 'https://futebolmaximo.github.io/go/t.html#';
+
   const BASES = {
     app: 'https://9fantasy.app/app',
-    web: 'https://futebolmaximo.github.io/9fantasy-web/'
+    web: 'https://9fantasy.app/'
   };
 
   let selectedFormato  = '';   // 'longform' | 'shorts'
   let selectedDestino  = 'app'; // 'app' | 'web'
   let currentVideoId   = '';
+
+  const COPY_BTN_DEFAULT_HTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar link`;
+  const COPY_BTN_SUCCESS_HTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiado!`;
+  const COPY_BTN_LOADING_HTML = `<span class="spinner" aria-hidden="true"></span> Gerando link curto...`;
 
   // ── Init ──
   setDestino('app');
@@ -533,24 +560,73 @@
   function update() {
     renderOutput();
     const btn = document.getElementById('btnCopy');
-    if (!btn.disabled) {
+    if (!btn.disabled && !btn.classList.contains('loading')) {
       btn.classList.remove('copied');
-      btn.innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar link`;
+      btn.innerHTML = COPY_BTN_DEFAULT_HTML;
     }
   }
 
-  // ── Copy ──
-  function copyLink() {
-    const url = buildUrl();
-    if (!url) return;
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('btnCopy');
-      btn.classList.add('copied');
-      btn.innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiado!`;
-      const toast = document.getElementById('toast');
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2200);
-    });
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  function setCopySuccess() {
+    const btn = document.getElementById('btnCopy');
+    btn.classList.remove('loading');
+    btn.classList.add('copied');
+    btn.disabled = false;
+    btn.innerHTML = COPY_BTN_SUCCESS_HTML;
+  }
+
+  function resetCopyButton() {
+    const btn = document.getElementById('btnCopy');
+    btn.classList.remove('loading', 'copied');
+    btn.disabled = false;
+    btn.innerHTML = COPY_BTN_DEFAULT_HTML;
+  }
+
+  // ── Copy (async: encurta via Apps Script, fallback = URL longa) ──
+  async function copyLink() {
+    const longUrl = buildUrl();
+    if (!longUrl) return;
+
+    const btn = document.getElementById('btnCopy');
+    btn.classList.add('loading');
+    btn.classList.remove('copied');
+    btn.disabled = true;
+    btn.innerHTML = COPY_BTN_LOADING_HTML;
+
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ acao: 'encurtar', longUrl })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      if (!data || !data.shortId) throw new Error('Resposta sem shortId');
+
+      const shortUrl = TRACKER_BASE_URL + data.shortId;
+      await navigator.clipboard.writeText(shortUrl);
+      setCopySuccess();
+      showToast('✓ Link copiado!');
+    } catch (err) {
+      console.error('Falha ao encurtar link:', err);
+      try {
+        await navigator.clipboard.writeText(longUrl);
+        setCopySuccess();
+        showToast('Link longo copiado (falha ao encurtar)');
+      } catch (clipErr) {
+        console.error('Falha ao copiar fallback:', clipErr);
+        resetCopyButton();
+        showToast('Erro ao copiar o link');
+      }
+    }
   }
 
   // ── Clear ──
