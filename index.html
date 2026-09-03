@@ -402,9 +402,14 @@
     <div class="divider"></div>
 
     <!-- Output -->
-    <div class="output-label">Link gerado</div>
+    <div class="output-label">Link parametrizado</div>
     <div class="output-box" id="outputBox">
       <span class="url-base">Preencha os campos acima para gerar o link</span>
+    </div>
+
+    <div class="output-label" style="margin-top:20px;">Link gerado</div>
+    <div class="output-box" id="shortOutputBox">
+      <span class="url-base">Clique em copiar para gerar o link curto</span>
     </div>
 
     <button class="btn-copy" id="btnCopy" onclick="copyLink()" disabled>
@@ -559,11 +564,25 @@
 
   function update() {
     renderOutput();
+    clearShortOutput();
     const btn = document.getElementById('btnCopy');
     if (!btn.disabled && !btn.classList.contains('loading')) {
       btn.classList.remove('copied');
       btn.innerHTML = COPY_BTN_DEFAULT_HTML;
     }
+  }
+
+  // ── Link curto (saída) ──
+  function renderShortOutput(shortId) {
+    const box = document.getElementById('shortOutputBox');
+    box.className = 'output-box has-params';
+    box.innerHTML = `<span class="url-base">${TRACKER_BASE_URL}</span><span class="url-param-val">${shortId}</span>`;
+  }
+
+  function clearShortOutput() {
+    const box = document.getElementById('shortOutputBox');
+    box.className = 'output-box';
+    box.innerHTML = '<span class="url-base">Clique em copiar para gerar o link curto</span>';
   }
 
   function showToast(message) {
@@ -613,10 +632,12 @@
 
       const shortUrl = TRACKER_BASE_URL + data.shortId;
       await navigator.clipboard.writeText(shortUrl);
+      renderShortOutput(data.shortId);
       setCopySuccess();
       showToast('✓ Link copiado!');
     } catch (err) {
       console.error('Falha ao encurtar link:', err);
+      clearShortOutput();
       try {
         await navigator.clipboard.writeText(longUrl);
         setCopySuccess();
