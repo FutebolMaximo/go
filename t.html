@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecionando…</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0f1117;
+      --text:   #e8e8f0;
+      --muted:  #7b7d8e;
+      --accent: #6c63ff;
+      --error:  #ef4444;
+      --font:   'Inter', system-ui, sans-serif;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(108, 99, 255, 0.25);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .spinner.hidden { display: none; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .msg {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.2px;
+    }
+
+    .msg.error {
+      color: var(--error);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="spinner" id="spinner" aria-hidden="true"></div>
+    <p class="msg" id="msg">Redirecionando...</p>
+  </div>
+
+  <script>
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUbXwgSErNeY-M2ZX6Ktk3AqraLVt4E4rdUlICtKq-iw0PSQAWAtP-AQzIrQ48B_dL/exec';
+    const VISITOR_KEY = 'fm_visitor_id';
+
+    (async function main() {
+      const shortId = (window.location.hash || '').replace(/^#/, '').trim();
+
+      if (!shortId) {
+        showError();
+        return;
+      }
+
+      try {
+        const res = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            acao: 'rastrear',
+            shortId: shortId,
+            device: detectDevice(),
+            visitor_id: getOrCreateVisitorId()
+          })
+        });
+
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        const data = await res.json();
+        if (!data || !data.longUrl) throw new Error('longUrl ausente');
+
+        window.location.replace(data.longUrl);
+      } catch (err) {
+        console.error('Falha no redirecionamento:', err);
+        showError();
+      }
+    })();
+
+    function showError() {
+      const spinner = document.getElementById('spinner');
+      const msg = document.getElementById('msg');
+      spinner.classList.add('hidden');
+      msg.textContent = 'Link não encontrado ou expirado.';
+      msg.classList.add('error');
+    }
+
+    function getOrCreateVisitorId() {
+      try {
+        let id = localStorage.getItem(VISITOR_KEY);
+        if (id) return id;
+        id = createUuid();
+        localStorage.setItem(VISITOR_KEY, id);
+        return id;
+      } catch (_) {
+        return createUuid();
+      }
+    }
+
+    function createUuid() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+
+    function detectDevice() {
+      const ua = navigator.userAgent || '';
+      if (/iPad|Tablet|PlayBook|Silk/i.test(ua) ||
+          (/Android/i.test(ua) && !/Mobile/i.test(ua))) {
+        return 'tablet';
+      }
+      if (/Mobi|Android|iPhone|iPod|Windows Phone|BlackBerry/i.test(ua)) {
+        return 'mobile';
+      }
+      return 'desktop';
+    }
+  </script>
+</body>
+</html>
