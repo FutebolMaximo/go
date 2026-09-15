@@ -367,6 +367,7 @@
         <div class="toggle-group">
           <button class="toggle-btn" id="btn-longform" onclick="setFormato('longform')">📹 Long Form</button>
           <button class="toggle-btn" id="btn-shorts"   onclick="setFormato('shorts')">⚡ Shorts</button>
+          <button class="toggle-btn" id="btn-live"     onclick="setFormato('live')">🔴 Live</button>
         </div>
       </div>
 
@@ -453,6 +454,7 @@
     selectedFormato = val;
     document.getElementById('btn-longform').classList.toggle('active', val === 'longform');
     document.getElementById('btn-shorts').classList.toggle('active',   val === 'shorts');
+    document.getElementById('btn-live').classList.toggle('active',     val === 'live');
     update();
   }
 
@@ -473,6 +475,7 @@
       /youtu\.be\/([A-Za-z0-9_-]{11})/,
       /youtube\.com\/watch\?.*v=([A-Za-z0-9_-]{11})/,
       /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/live\/([A-Za-z0-9_-]{11})/,
       /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
       /^([A-Za-z0-9_-]{11})$/
     ];
@@ -657,6 +660,7 @@
     currentVideoId  = '';
     document.getElementById('btn-longform').classList.remove('active');
     document.getElementById('btn-shorts').classList.remove('active');
+    document.getElementById('btn-live').classList.remove('active');
     document.getElementById('btn-app').classList.add('active');
     document.getElementById('btn-web').classList.remove('active');
     document.getElementById('baseDisplay').textContent = BASES['app'];
