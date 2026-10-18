@@ -8,17 +8,18 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #0f1117;
-      --surface: #1a1d27;
-      --border:  #2a2d3a;
-      --accent:  #6c63ff;
-      --accent2: #a78bfa;
-      --text:    #e8e8f0;
-      --muted:   #7b7d8e;
-      --success: #22c55e;
-      --error:   #ef4444;
-      --radius:  10px;
-      --font:    'Inter', system-ui, sans-serif;
+      --bg:       #f3f4f6;
+      --surface:  #ffffff;
+      --input-bg: #f9fafb;
+      --border:   #e5e7eb;
+      --accent:   #2563eb;
+      --accent2:  #1d4ed8;
+      --text:     #1f2937;
+      --muted:    #6b7280;
+      --success:  #16a34a;
+      --error:    #dc2626;
+      --radius:   10px;
+      --font:     'Inter', system-ui, sans-serif;
     }
 
     html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font); }
@@ -41,6 +42,7 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--accent2);
+      background: var(--surface);
       border: 1px solid var(--accent);
       border-radius: 20px;
       padding: 4px 14px;
@@ -71,6 +73,7 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 32px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.08), 0 8px 24px rgba(15,23,42,0.06);
     }
 
     /* ── Field wrapper ── */
@@ -93,7 +96,7 @@
       font-family: 'Courier New', monospace;
       font-size: 10px;
       color: var(--accent2);
-      background: rgba(108,99,255,0.1);
+      background: rgba(37,99,235,0.08);
       padding: 1px 6px;
       border-radius: 4px;
     }
@@ -107,7 +110,7 @@
     .toggle-btn {
       flex: 1;
       padding: 12px 16px;
-      background: var(--bg);
+      background: var(--input-bg);
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
       color: var(--muted);
@@ -125,7 +128,7 @@
     }
 
     .toggle-btn.active {
-      background: rgba(108,99,255,0.12);
+      background: rgba(37,99,235,0.08);
       border-color: var(--accent);
       color: var(--accent2);
       font-weight: 700;
@@ -134,7 +137,7 @@
     /* ── Text input ── */
     .field input {
       width: 100%;
-      background: var(--bg);
+      background: var(--input-bg);
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
       color: var(--text);
@@ -158,8 +161,8 @@
     .video-id-preview.visible { display: flex; }
 
     .video-id-badge {
-      background: rgba(34,197,94,0.12);
-      border: 1px solid rgba(34,197,94,0.3);
+      background: rgba(22,163,74,0.08);
+      border: 1px solid rgba(22,163,74,0.25);
       color: var(--success);
       font-family: 'Courier New', monospace;
       font-size: 12px;
@@ -183,7 +186,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      background: var(--bg);
+      background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 10px 14px;
@@ -214,8 +217,8 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       color: var(--accent2);
-      background: rgba(108,99,255,0.12);
-      border: 1px solid rgba(108,99,255,0.35);
+      background: rgba(37,99,235,0.08);
+      border: 1px solid rgba(37,99,235,0.3);
       padding: 2px 8px;
       border-radius: 20px;
       white-space: nowrap;
@@ -232,7 +235,7 @@
     }
 
     .output-box {
-      background: var(--bg);
+      background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 14px;
@@ -245,7 +248,7 @@
       transition: border-color 0.2s;
     }
 
-    .output-box.has-params { border-color: rgba(108,99,255,0.3); }
+    .output-box.has-params { border-color: rgba(37,99,235,0.35); }
     .output-box .url-base      { color: var(--muted); }
     .output-box .url-param-key { color: var(--accent2); }
     .output-box .url-param-val { color: var(--success); }
@@ -271,7 +274,7 @@
       gap: 8px;
     }
 
-    .btn-copy:hover:not(:disabled) { background: #5b52e8; }
+    .btn-copy:hover:not(:disabled) { background: #1d4ed8; }
     .btn-copy:active:not(:disabled) { transform: scale(0.98); }
     .btn-copy.copied { background: var(--success); }
     .btn-copy:disabled { opacity: 0.35; cursor: not-allowed; }
