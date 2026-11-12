@@ -102,37 +102,74 @@
       border-radius: 4px;
     }
 
-    /* ── Toggle button group ── */
-    .toggle-group {
+    /* ── Format cards (character select) ── */
+    .format-grid {
       display: flex;
-      gap: 8px;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
     }
 
-    .toggle-btn {
-      flex: 1;
-      padding: 12px 16px;
-      background: var(--input-bg);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 600;
-      font-family: var(--font);
+    .format-card {
+      width: 124px;
+      padding: 16px 10px 0;
+      background: #1a1d27;
+      border: 3px solid #2a2d3a;
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.15s;
-      text-align: center;
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      overflow: hidden;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
 
-    .toggle-btn:hover:not(.active) {
-      border-color: var(--accent2);
-      color: var(--accent2);
+    .format-card:hover:not(.active) {
+      border-color: #3d4356;
+      transform: translateY(-2px);
     }
 
-    .toggle-btn.active {
-      background: rgba(37,99,235,0.08);
+    .format-card.active {
       border-color: var(--accent);
-      color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.18), 0 0 18px rgba(37,99,235,0.45);
+      transform: scale(1.05);
+    }
+
+    .format-img {
+      height: 80px;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .format-img.fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      font-size: 40px;
+    }
+
+    .format-label {
+      width: 100%;
+      padding: 8px 4px;
+      background: #0f1117;
+      color: #7b7d8e;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
       font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-align: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .format-card.active .format-label {
+      background: var(--accent);
+      color: #ffffff;
     }
 
     /* ── Text input ── */
@@ -206,47 +243,31 @@
 
     .output-box .url-base { color: var(--muted); }
 
-    /* Container no modo "links gerados" */
+    /* Caixa no modo "links gerados" */
     .output-box.links {
-      background: transparent;
-      border: none;
-      padding: 0;
-      min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
+      border-color: rgba(37,99,235,0.35);
     }
 
-    .link-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px 14px;
-    }
+    .link-line { display: flex; align-items: baseline; gap: 8px; }
 
-    .link-icon { font-size: 15px; line-height: 1; flex-shrink: 0; }
+    .link-icon { flex-shrink: 0; }
 
-    .link-url {
-      flex: 1;
-      min-width: 0;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.5;
-      color: var(--muted);
-      word-break: break-all;
-    }
+    .link-tag { color: var(--text); font-weight: 700; flex-shrink: 0; }
+
+    .link-url { min-width: 0; color: var(--muted); word-break: break-all; }
 
     .link-url .link-id { color: var(--accent2); font-weight: 700; }
 
-    .btn-copy-sm {
-      flex-shrink: 0;
+    .btn-copy-all {
+      align-self: flex-end;
+      margin-top: 4px;
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 12px;
+      padding: 7px 14px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -258,9 +279,9 @@
       transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
 
-    .btn-copy-sm:hover { border-color: var(--accent); background: rgba(37,99,235,0.06); }
+    .btn-copy-all:hover { border-color: var(--accent); background: rgba(37,99,235,0.06); }
 
-    .btn-copy-sm.copied {
+    .btn-copy-all.copied {
       color: var(--success);
       border-color: rgba(22,163,74,0.4);
       background: rgba(22,163,74,0.08);
@@ -366,10 +387,19 @@
       <!-- 1. FORMATO (utm_campaign) -->
       <div class="field">
         <div class="field-label">Formato <span class="param">utm_campaign</span></div>
-        <div class="toggle-group">
-          <button class="toggle-btn" id="btn-longform" onclick="setFormato('longform')">📹 Long Form</button>
-          <button class="toggle-btn" id="btn-shorts"   onclick="setFormato('shorts')">⚡ Shorts</button>
-          <button class="toggle-btn" id="btn-live"     onclick="setFormato('live')">🔴 Live</button>
+        <div class="format-grid">
+          <button type="button" class="format-card" id="btn-longform" onclick="setFormato('longform')">
+            <img class="format-img" src="longform.png" alt="Long Form" onerror="imgFallback(this, '📹')">
+            <span class="format-label">Long Form</span>
+          </button>
+          <button type="button" class="format-card" id="btn-shorts" onclick="setFormato('shorts')">
+            <img class="format-img" src="shorts.png" alt="Shorts" onerror="imgFallback(this, '⚡')">
+            <span class="format-label">Shorts</span>
+          </button>
+          <button type="button" class="format-card" id="btn-live" onclick="setFormato('live')">
+            <img class="format-img" src="live.png" alt="Live" onerror="imgFallback(this, '🔴')">
+            <span class="format-label">Live</span>
+          </button>
         </div>
       </div>
 
@@ -427,15 +457,25 @@
 
   let selectedFormato = '';   // 'longform' | 'shorts' | 'live'
   let currentVideoId  = '';
+  let linksGerados    = null; // { app, web } após gerar
 
   const GEN_BTN_DEFAULT_HTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Gerar Links`;
   const GEN_BTN_LOADING_HTML = `<span class="spinner" aria-hidden="true"></span> Gerando links...`;
+  const GEN_BTN_SUCCESS_HTML = `✅ Links Gerados`;
 
   const SMALL_BTN_DEFAULT_HTML = `<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar`;
   const SMALL_BTN_SUCCESS_HTML = `<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiado`;
 
   // ── Init ──
   update();
+
+  // Mostra um emoji no lugar da imagem enquanto os PNGs não existirem
+  function imgFallback(img, emoji) {
+    const div = document.createElement('div');
+    div.className = 'format-img fallback';
+    div.textContent = emoji;
+    img.replaceWith(div);
+  }
 
   // ── Formato ──
   function setFormato(val) {
@@ -519,23 +559,26 @@
   }
 
   // ── Links gerados (saída) ──
-  function renderLinks(shortIdApp, shortIdWeb) {
+  function renderLinks() {
     const box = document.getElementById('shortOutputBox');
     box.className = 'output-box links';
-    box.innerHTML = linkRow('📲', shortIdApp) + linkRow('💻', shortIdWeb);
+    box.innerHTML = `
+      ${linkLine('📲', 'App:', linksGerados.app)}
+      ${linkLine('💻', 'Web:', linksGerados.web)}
+      <button class="btn-copy-all" onclick="copiarAmbos(this)">${SMALL_BTN_DEFAULT_HTML}</button>`;
   }
 
-  function linkRow(icon, shortId) {
-    const url = TRACKER_BASE_URL + shortId;
+  function linkLine(icon, tag, shortId) {
     return `
-      <div class="link-row">
+      <div class="link-line">
         <span class="link-icon">${icon}</span>
+        <span class="link-tag">${tag}</span>
         <span class="link-url">${TRACKER_BASE_URL}<span class="link-id">${shortId}</span></span>
-        <button class="btn-copy-sm" onclick="copiarUrlIndividual('${url}', this)">${SMALL_BTN_DEFAULT_HTML}</button>
       </div>`;
   }
 
   function clearShortOutput() {
+    linksGerados = null;
     const box = document.getElementById('shortOutputBox');
     box.className = 'output-box';
     box.innerHTML = '<span class="url-base">Preencha os campos acima e clique em gerar links</span>';
@@ -550,9 +593,18 @@
 
   function resetGenButton() {
     const btn = document.getElementById('btnCopy');
-    btn.classList.remove('loading');
+    btn.classList.remove('loading', 'copied');
     btn.disabled = !(currentVideoId || selectedFormato);
     btn.innerHTML = GEN_BTN_DEFAULT_HTML;
+  }
+
+  // Estado verde persistente: só sai ao mudar um campo ou limpar
+  function setGenSuccess() {
+    const btn = document.getElementById('btnCopy');
+    btn.classList.remove('loading');
+    btn.classList.add('copied');
+    btn.disabled = false;
+    btn.innerHTML = GEN_BTN_SUCCESS_HTML;
   }
 
   // ── Encurtar uma URL via Apps Script ──
@@ -579,6 +631,7 @@
 
     const btn = document.getElementById('btnCopy');
     btn.classList.add('loading');
+    btn.classList.remove('copied');
     btn.disabled = true;
     btn.innerHTML = GEN_BTN_LOADING_HTML;
 
@@ -587,22 +640,27 @@
         encurtar(urlApp),
         encurtar(urlWeb)
       ]);
-      renderLinks(shortIdApp, shortIdWeb);
+      linksGerados = { app: shortIdApp, web: shortIdWeb };
+      renderLinks();
+      setGenSuccess();
       showToast('✓ Links gerados!');
     } catch (err) {
       console.error('Falha ao gerar links:', err);
       clearShortOutput();
-      showToast('Erro ao gerar os links');
-    } finally {
       resetGenButton();
+      showToast('Erro ao gerar os links');
     }
   }
 
-  // ── Copiar um link específico ──
-  async function copiarUrlIndividual(url, btnElement) {
+  // ── Copiar os dois links de uma vez ──
+  async function copiarAmbos(btnElement) {
+    if (!linksGerados) return;
+
+    const texto = `📲 App: ${TRACKER_BASE_URL}${linksGerados.app}\n💻 Web: ${TRACKER_BASE_URL}${linksGerados.web}`;
+
     try {
-      await navigator.clipboard.writeText(url);
-      showToast('✓ Link copiado!');
+      await navigator.clipboard.writeText(texto);
+      showToast('✓ Links copiados!');
 
       btnElement.classList.add('copied');
       btnElement.innerHTML = SMALL_BTN_SUCCESS_HTML;
@@ -611,10 +669,10 @@
       btnElement._resetTimer = setTimeout(() => {
         btnElement.classList.remove('copied');
         btnElement.innerHTML = SMALL_BTN_DEFAULT_HTML;
-      }, 1800);
+      }, 2000);
     } catch (err) {
-      console.error('Falha ao copiar link:', err);
-      showToast('Erro ao copiar o link');
+      console.error('Falha ao copiar links:', err);
+      showToast('Erro ao copiar os links');
     }
   }
 
